@@ -1,0 +1,111 @@
+---
+title: "Data Visualization"
+author: "Guillermo Romero"
+date: "2022-08-17"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+library(tidyverse)
+library(here)
+library(janitor)
+library(patchwork)
+library(ggrepel)
+library(gghighlight)
+library(paletteer)
+library(ggExtra)
+library(ggbeeswarm)
+library(gapminder)
+```
+
+\# Read in Lizard Data
+
+```{r}
+lizards <- read_csv(here::here("data_tidy","lizards.csv"))
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) + geom_point()
+
+
+```
+
+create histogram for total lengths in lizards data set
+
+```{r}
+ggplot(data = lizards, aes(x = total_length)) +
+  geom_histogram(color = "orange",
+                 fill = "purple",
+                 size = 0.3,
+                 linetype = "dotted") 
+# if you are not changing a variable on x and y then don't put inside aes
+  
+```
+
+```{r}
+ggplot(data = lizards, aes( x = total_length, y = weight)) +
+  geom_point(shape = 22,
+             color = "cyan4",
+             fill = "yellow",
+             size = 4,
+             alpha = 0.4)
+```
+
+changing the aesthic based on different values of a variable
+
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = common_name,
+                 size = total_length), alpha = 0.5) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point() + facet_wrap(~common_name, ncol = 3, scales = "free")
+```
+
+```{r}
+lizards_counts <- lizards |> 
+  group_by(common_name) |> 
+  summarize(counts = n())
+lizards_counts
+
+liz_count <- lizards |> 
+  count(common_name, site, tail)
+liz_count
+```
+
+```{r}
+ggplot(lizards_counts, aes(y = common_name, x = counts)) +
+  geom_col() # default for categorical variable is alphabetical variable, can convert to factor and set the order
+# convert and plot as factor by the value of n
+# manual orders are not reproducible 
+```
+
+# Factor reorder
+
+```{r}
+ggplot(lizards_counts, aes(y = fct_reorder(common_name, counts), x = counts)) +
+  geom_col()
+```
+
+Create scatterplots, faceted by species, for total length versus weight.
+
+The color and shape of points should differ based on the species name (common name). Change theme. Make each faceted panel have flexible axis limits (scales should be free).
+
+```{r}
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = common_name),
+             alpha = 0.6,
+             size = 3) +
+  facet_wrap(~common_name, scales = "free") +
+  theme_light() +
+  labs(x = " Total Length (mm)",
+       y = "Weight (grams)")
+```
