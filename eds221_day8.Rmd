@@ -21,6 +21,8 @@ library(paletteer)
 library(ggExtra)
 library(ggbeeswarm)
 library(gapminder)
+library(sf)
+library(ggthemes)
 ```
 
 \# Read in Lizard Data
@@ -109,3 +111,114 @@ ggplot(lizards, aes(x = total_length, y = weight)) +
   labs(x = " Total Length (mm)",
        y = "Weight (grams)")
 ```
+
+# Fun with `scales`
+
+```{r}
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_color_gradient(low = "purple", high = "orange")
+
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_color_gradientn(colors = c("magenta", "cyan4", "darkorchid3", "dodgerblue", "green", "yellow"))
+
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_color_steps(low = "red", high = "black")
+
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = total_length)) +
+  scale_color_steps2(low = "purple",mid = "white", high = "orange",
+                     midpoint = 150,
+                     breaks = c(50, 75,180,220,280))
+
+ggplot(lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = total_length)) +
+  scale_color_stepsn(colors = c("orange", "red", "purple"),
+                     breaks = seq(from = 0 , to = 300, by = 60))
+```
+
+# Paletteer
+
+Make a horizontal boxplot with common name on the y -axis, total length on the x- axis, with boxplot fill changing based on the common name
+
+```{r}
+# store updated variable as a factor to use whenever needed,f column, x reorder by
+# put them in order by median of different levels of factor, default alphabetical,
+# ordered by lowest to highest median
+lizards_median <- lizards |> 
+  mutate(common_name = fct_reorder(.f = common_name, .x = total_length, .fun = median))
+
+ggplot(lizards, aes(y= common_name, x = total_length)) +
+  geom_boxplot(aes(fill = common_name))
+
+ggplot(data = lizards_median, aes(y= common_name, x = total_length)) + 
+  geom_boxplot(aes(fill = common_name), show.legend = FALSE) +
+  scale_fill_paletteer_d(palette = "ggsci::default_gsea") + theme_minimal()
+
+
+ggplot(data = lizards_median, aes(y = common_name, x = total_length)) +
+  geom_boxplot(aes(fill = common_name), show.legend = FALSE) +
+  scale_x_continuous(limits = c(0, 500)) +
+  scale_fill_paletteer_d(palette = "ggsci::light_blue_material") +
+  labs(y = "Lizard species",
+       x = "Total length (mm)") +
+  theme_minimal()
+palettes_d_names
+```
+# Customization through `theme()`
+```{r}
+
+# can use element_blank (), axis.title = will apply to both, highest resolution
+# will apply
+ggplot(data = lizards_median, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  theme(panel.grid.major.x = element_line(color = "red"),
+        panel.grid.minor.y = element_line(color = "green"),
+        axis.title.x = element_text(color = "purple", size = 10),
+        axis.text.y = element_text(color = "green"),
+        text = element_text(size = 18),
+        panel.background = element_rect(color = 'purple', fill = 'yellow')) +
+  annotate("text", x = 300, y = 50, label = "Wooo\nooo", color = "dodgerblue") +
+  geom_vline(xintercept = 250, linetype = "dashed", color = "orange", size = 4)
+
+```
+# Repulsive labels with `ggrepel()`
+
+```{r}
+wws_lizards <- lizards |> 
+  filter(common_name == "western whiptail", 
+         site == "sand")
+head(wws_lizards)
+
+ggplot(data = wws_lizards, aes(x = total_length, y = weight)) +
+  geom_point()+
+  # geom_text(aes(label = toe_num))
+  geom_text_repel(aes(label = toe_num))
+
+head(gapminder)
+
+gapminder |> 
+  filter(year == 2002 & continent == "Europe") |> 
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point() +
+  geom_text_repel(aes(label = country), size = 3)
+
+
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point() +
+  gghighlight(toe_num == 250, label_key = toe_num) # weight > 30
+```
+# Make a map
+```{r}
+# simple features 
+jornada_veg <- read_sf(here::here("data_raw", "spatial_vegetation","doc.kml"))
+# change polygons colors fill
+ggplot() + geom_sf(data = jornada_veg,
+                   aes(fill = Name),
+                   color = NA) +
+  theme_minimal() +
+  scale_fill_paletteer_d(palette = "ggthemes::manyeys")
+```
+
